@@ -1,0 +1,12 @@
+.git
+.next
+node_modules
+npm-debug.log*
+.env
+.env.*
+!.env.example
+.data
+uploads
+coverage
+*.tsbuildinfo
+ChatGPT Image Sep 28, 2026, 08_58_23 PM.png

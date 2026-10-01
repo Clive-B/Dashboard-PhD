@@ -1,0 +1,32 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# Environment and local data
+.env
+.env.*
+!.env.example
+.data/
+uploads/
+.local/
+.aic-test-tmp/
+.pytest_cache/
+AIC_Integration_Pack_*.zip
+
+# Local source and review artefacts (not application assets)
+/Academic Intelligence Chatbot.pdf
+/ChatGPT Image Sep 28, 2026, 08_58_23 PM.png
+/artifact-review.png
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# TypeScript
+*.tsbuildinfo
