@@ -57,6 +57,8 @@ npm run dev
 
 The migration creates the full course → module → lecture → topic → concept hierarchy, sources/chunks, revision/mastery, academic and work planning, calendar/capacity, watchdog, assistant evidence and audit entities.
 
+For the African-region deployment path, use the guarded Johannesburg runbook in `docs/azure-postgresql-johannesburg.md`. After provisioning and migration, run `npm run db:verify` before connecting the hosted application.
+
 ## Optional services
 
 - Open-ended questions in General mode use Vercel AI Gateway when available. On Vercel, the server obtains its short-lived OIDC token at request time; for local or non-Vercel deployments set `AI_GATEWAY_API_KEY`. `AI_GATEWAY_MODEL` defaults to `openai/gpt-5.4-mini`, and `GENERAL_AI_ENABLED=false` is the server-side kill switch. Only the current General-mode prompt is sent: conversation history, Knowledge Vault, research, planning, work and dashboard context remain local. This does not enable live web search, African data residency, or an official AIC connection. First Edition remains usable with governed local fallbacks when the provider is unavailable or its free allowance is exhausted.
