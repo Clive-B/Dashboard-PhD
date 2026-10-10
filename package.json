@@ -6,6 +6,8 @@
     "dev": "node --use-system-ca ./node_modules/next/dist/bin/next dev -p 3001",
     "build": "next build",
     "start": "node --use-system-ca ./node_modules/next/dist/bin/next start -p 3001",
+    "build:home": "npm run build && node scripts/prepare-home-server.mjs",
+    "start:home": "node --use-system-ca scripts/start-home-server.mjs",
     "lint": "tsc --noEmit",
     "test": "node --test --import tsx tests/*.test.ts",
     "db:migrate": "node scripts/migrate.mjs",

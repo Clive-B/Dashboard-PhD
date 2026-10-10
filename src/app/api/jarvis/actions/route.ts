@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { jarvisCapability, requiresHumanApproval, type JarvisCapability } from "@/lib/jarvis";
+import { jarvisCapability, permanentJarvisDenial, requiresHumanApproval, type JarvisCapability } from "@/lib/jarvis";
 import { databaseConfigured, db } from "@/lib/server/db";
 import { currentSession } from "@/lib/server/session";
 
@@ -31,6 +31,8 @@ export async function POST(request: Request) {
   if (!databaseConfigured() || !session.userId) return NextResponse.json({ error: "PostgreSQL identity is required" }, { status: 503 });
   const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid action request", details: parsed.error.flatten() }, { status: 400 });
+  const permanentDenial = permanentJarvisDenial(parsed.data.capability);
+  if (permanentDenial) return NextResponse.json({ error: permanentDenial, permanentlyDenied: true }, { status: 403 });
   const definition = jarvisCapability(parsed.data.capability);
   if (!definition) return NextResponse.json({ error: "Capability is not registered" }, { status: 403 });
   const payloadJson = JSON.stringify(parsed.data.payload);
