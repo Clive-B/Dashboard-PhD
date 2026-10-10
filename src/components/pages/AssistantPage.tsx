@@ -167,25 +167,15 @@ export function AssistantPage() {
     const normalized = question.toLowerCase();
     const planningQuery = mode === "Plan" || mode === "Review progress" || /\b(what should|next|today|deadline|task|plan|priority|progress)\b/.test(normalized);
     const generalQuery = mode === "General";
-    const academicQuery = !generalQuery && !planningQuery;
-    const includeWorkContext = planningQuery || /\b(work|job|office|professional|deliverable|project)\b/.test(normalized);
     const scope = generalQuery ? "general" : planningQuery ? "planning" : "academic";
-    const terms = normalized.split(/\W+/).filter((word) => word.length > 4);
-    const relevantSources = state.sources.filter((source) => terms.some((term) => `${source.title} ${source.tags.join(" ")} ${source.course || ""}`.toLowerCase().includes(term))).slice(0, 5);
-    const context = {
-      academic: academicQuery ? [
-        ...state.courses.slice(0, 8).map((item) => `${item.code ? `${item.code}: ` : ""}${item.title}${item.description ? ` — ${item.description}` : ""}`),
-        ...state.tasks.filter((task) => task.domain === "academic" && task.status !== "completed").slice(0, 8).map((task) => `Academic task: ${task.title}; status ${task.status}; due ${task.deadline}`),
-        ...relevantSources.map((source) => `Source: ${source.title}; ${source.content.slice(0, 500)}`)
-      ] : [],
-      work: includeWorkContext ? state.tasks.filter((task) => task.domain === "work" && task.status !== "completed").slice(0, 8).map((task) => `Work task: ${task.title}; status ${task.status}; priority ${task.priority}; due ${task.deadline}${task.notes ? `; notes ${task.notes}` : ""}`) : []
-    };
-    if (process.env.NEXT_PUBLIC_CONNECTED_AI_ENABLED !== "true") return localAnswer(question);
+    // Only General mode may leave the application. All governed academic,
+    // planning, Knowledge Vault and work questions stay on the local path.
+    if (scope !== "general") return localAnswer(question);
     try {
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: question, mode: mode.toLowerCase(), scope, includeWorkContext, context, history: messagesRef.current.slice(-8).map((message) => ({ role: message.role, text: message.text })) }),
+        body: JSON.stringify({ prompt: question, mode: mode.toLowerCase(), scope: "general", includeWorkContext: false, history: [] }),
         signal
       });
       if (response.ok) {

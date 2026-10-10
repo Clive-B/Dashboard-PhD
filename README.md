@@ -16,7 +16,7 @@ A personal, human-led command center for balancing PhD learning, revision, profe
 - Explainable risk, remaining-effort and capacity-deficit calculations.
 - Combined weekly calendar with academic, work and revision categories.
 - Local evidence retrieval assistant with source-grounded labels and a no-invention fallback.
-- Connected OpenAI assistant for open-ended general questions when `OPENAI_API_KEY` is configured.
+- Connected Vercel AI Gateway assistant for open-ended general questions, isolated from governed application context.
 - Continuous conversation mode with voice interruption, an always-visible control and compact browser-local context memory.
 - Printable daily shorthand brief and an organised, browser-local sticky-note board.
 - Configurable capacity utilization and removable demo data.
@@ -57,7 +57,7 @@ The migration creates the full course → module → lecture → topic → conce
 
 ## Optional services
 
-- `NEXT_PUBLIC_CONNECTED_AI_ENABLED=true` and `OPENAI_API_KEY` together enable the connected OpenAI Responses API adapter; `OPENAI_MODEL` defaults to `gpt-5-mini`. Leave the public flag false for a browser-local pilot so assistant prompts and dashboard context are not sent to the hosted API. This provides online model access but does not enable live web search. First Edition remains usable with governed local fallbacks when the provider is unavailable.
+- Open-ended questions in General mode use Vercel AI Gateway when available. On Vercel, the server uses its automatic `VERCEL_OIDC_TOKEN`; for local or non-Vercel deployments set `AI_GATEWAY_API_KEY`. `AI_GATEWAY_MODEL` defaults to `openai/gpt-5.4-mini`, and `GENERAL_AI_ENABLED=false` is the server-side kill switch. Only the current General-mode prompt is sent: conversation history, Knowledge Vault, research, planning, work and dashboard context remain local. This does not enable live web search, African data residency, or an official AIC connection. First Edition remains usable with governed local fallbacks when the provider is unavailable or its free allowance is exhausted.
 - Study Podcast playback prefers installed British English (`en-GB`) voices for both presenters and does not require an API key. If the device has no British voice, the browser supplies an available fallback. Downloadable MP3 rendering is a later connected-service feature.
 - `S3_*` variables are reserved for an S3-compatible storage adapter. First Edition uses local storage through the same interface.
 - Google and Microsoft calendar integrations are not required for First Edition; the internal calendar is active.

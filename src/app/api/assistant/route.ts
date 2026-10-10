@@ -22,32 +22,21 @@ function extractOutputText(payload: OpenAIResponse) {
   return payload.output?.flatMap((item) => item.content || []).filter((item) => item.type === "output_text").map((item) => item.text || "").join("\n").trim() || "";
 }
 
-async function generateAnswer(input: z.infer<typeof schema>, evidence: Evidence[]) {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
+async function generateAnswer(input: z.infer<typeof schema>) {
+  // Connected generation is deliberately limited to general questions. Academic,
+  // planning, Knowledge Vault and work context never enter the provider request.
+  if (input.scope !== "general" || process.env.GENERAL_AI_ENABLED === "false") return null;
+  const apiKey = process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim();
   if (!apiKey) return null;
 
-  const academicContext = input.scope === "academic"
-    ? [...(input.context?.academic || []), ...evidence.map((item) => `Retrieved source: ${item.title}\n${item.excerpt}`)]
-    : [];
-  const workContext = input.scope === "planning" && input.includeWorkContext ? input.context?.work || [] : [];
-  const contextBlock = [
-    academicContext.length ? `ACADEMIC CONTEXT\n${academicContext.join("\n\n")}` : "",
-    workContext.length ? `WORK CONTEXT (user explicitly asked a work/planning question)\n${workContext.join("\n\n")}` : ""
-  ].filter(Boolean).join("\n\n");
-  const history = input.history.map((item) => ({ role: item.role, content: item.text }));
-  const scopeInstructions = input.scope === "general"
-    ? "Answer open-ended general questions directly using general knowledge. Do not force the question into an academic or dashboard context. If the answer depends on live or rapidly changing information that you cannot verify, say that current verification is needed."
-    : input.scope === "planning"
-      ? "Help the user reason about priorities and options. Treat supplied dashboard details as private user context, avoid unsupported assumptions, and leave decisions with the user."
-      : "Support learning and research without replacing the learner's authorship. Ground source-dependent claims in the supplied academic context and name the source where possible; if evidence is insufficient, say so.";
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch("https://ai-gateway.vercel.sh/v1/responses", {
     method: "POST",
     headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: process.env.OPENAI_MODEL?.trim() || "gpt-5-mini",
-      instructions: `You are the AI assistant inside AIC Scholar Command Center. Answer conversationally in British English and adapt detail to the question. ${scopeInstructions} Clearly distinguish dashboard facts, supplied sources and general knowledge. Never invent citations, course notes, lecturer claims, deadlines or work facts. Do not claim to be the official AIC or claim that governance controls have executed when they have not. The user remains the final decision-maker.`,
-      input: [...history, { role: "user", content: `${contextBlock ? `${contextBlock}\n\n` : ""}CURRENT MODE: ${input.mode}\nQUESTION: ${input.prompt}` }],
-      max_output_tokens: 1_200,
+      model: process.env.AI_GATEWAY_MODEL?.trim() || "openai/gpt-5.4-mini",
+      instructions: "You are the optional general-knowledge assistant inside AIC Scholar Command Center. Answer conversationally in British English and adapt detail to the question. Answer only from general knowledge supplied by the model; you have not received the user's Knowledge Vault, research, dashboard, planning or work data. Do not imply access to those sources. If the answer depends on live or rapidly changing information that you cannot verify, say that current verification is needed. Never invent citations or claim to be the official AIC. Do not claim that governance controls, residency checks, audits, signatures or certificates have executed. The user remains the final decision-maker.",
+      input: [{ role: "user", content: input.prompt }],
+      max_output_tokens: 800,
       store: false
     })
   });
@@ -74,13 +63,13 @@ export async function POST(request: Request) {
   }
 
   let answer: string | null = null;
-  try { answer = await generateAnswer(input, evidence); }
+  try { answer = await generateAnswer(input); }
   catch (error) {
     console.error("Assistant provider request failed:", error instanceof Error ? error.message : "Unknown provider error");
     answer = null;
   }
 
-  const providerConfigured = Boolean(process.env.OPENAI_API_KEY?.trim());
+  const providerConfigured = process.env.GENERAL_AI_ENABLED !== "false" && Boolean(process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim());
   const provenance = evidence.length ? "source-grounded" : "general";
   if (!answer && evidence.length) answer = evidence.map((item) => item.excerpt).join("\n\n");
   if (!answer) return NextResponse.json({
@@ -88,12 +77,12 @@ export async function POST(request: Request) {
     provenance: "none",
     answer: providerConfigured
       ? "The AI provider is temporarily unavailable. Please try the question again shortly."
-      : "The optional AI provider is not configured. Add OPENAI_API_KEY on the server to enable open-ended general questions.",
+      : "The optional general-question AI is not configured. Enable Vercel AI Gateway authentication to use it.",
     evidence: []
   });
 
   if (userId) {
-    const interaction = await db().query<{ id: string }>("INSERT INTO aic_interactions(user_id,mode,user_prompt,response_text,provenance_label,model_provider,result_status) VALUES($1,$2,$3,$4,$5,$6,'success') RETURNING id", [userId, input.mode, input.prompt, answer, provenance === "source-grounded" ? "source_grounded" : "none", providerConfigured ? "openai" : "local-retrieval"]);
+    const interaction = await db().query<{ id: string }>("INSERT INTO aic_interactions(user_id,mode,user_prompt,response_text,provenance_label,model_provider,result_status) VALUES($1,$2,$3,$4,$5,$6,'success') RETURNING id", [userId, input.mode, input.prompt, answer, provenance === "source-grounded" ? "source_grounded" : "none", providerConfigured ? "vercel-ai-gateway" : "local-retrieval"]);
     for (let index = 0; index < evidence.length; index++) await db().query("INSERT INTO evidence_references(interaction_id,source_id,source_chunk_id,citation_order,quoted_text) VALUES($1,$2,$3,$4,$5)", [interaction.rows[0].id, evidence[index].sourceId, evidence[index].chunkId, index + 1, evidence[index].excerpt]);
   }
 
