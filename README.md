@@ -57,7 +57,7 @@ The migration creates the full course → module → lecture → topic → conce
 
 ## Optional services
 
-- `OPENAI_API_KEY` enables the connected OpenAI Responses API adapter; `OPENAI_MODEL` defaults to `gpt-5-mini`. This provides online model access but does not enable live web search. First Edition remains usable with governed local fallbacks when the provider is unavailable.
+- `NEXT_PUBLIC_CONNECTED_AI_ENABLED=true` and `OPENAI_API_KEY` together enable the connected OpenAI Responses API adapter; `OPENAI_MODEL` defaults to `gpt-5-mini`. Leave the public flag false for a browser-local pilot so assistant prompts and dashboard context are not sent to the hosted API. This provides online model access but does not enable live web search. First Edition remains usable with governed local fallbacks when the provider is unavailable.
 - Study Podcast playback prefers installed British English (`en-GB`) voices for both presenters and does not require an API key. If the device has no British voice, the browser supplies an available fallback. Downloadable MP3 rendering is a later connected-service feature.
 - `S3_*` variables are reserved for an S3-compatible storage adapter. First Edition uses local storage through the same interface.
 - Google and Microsoft calendar integrations are not required for First Edition; the internal calendar is active.

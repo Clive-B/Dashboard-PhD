@@ -8,6 +8,22 @@ function formRedirect(location: string) {
   return new NextResponse(null, { status: 303, headers: { Location: location } });
 }
 
+function configuredCredentials() {
+  const email = process.env.DEMO_EMAIL?.trim();
+  const password = process.env.DEMO_PASSWORD;
+  const secret = process.env.AUTH_SECRET?.trim();
+
+  if (process.env.NODE_ENV === "production") {
+    if (!email || !password || !secret || secret.length < 32) return null;
+    return { email, password };
+  }
+
+  return {
+    email: email || "clive@example.com",
+    password: password || "AicScholar!2026"
+  };
+}
+
 export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") || "";
   const formSubmission = contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data");
@@ -20,9 +36,13 @@ export async function POST(request: Request) {
       ? formRedirect("/login?error=invalid")
       : NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
   }
-  const expectedEmail = process.env.DEMO_EMAIL || "clive@example.com";
-  const expectedPassword = process.env.DEMO_PASSWORD || "AicScholar!2026";
-  if (parsed.data.email !== expectedEmail || parsed.data.password !== expectedPassword) {
+  const credentials = configuredCredentials();
+  if (!credentials) {
+    return formSubmission
+      ? formRedirect("/login?error=configuration")
+      : NextResponse.json({ error: "Authentication is not configured" }, { status: 503 });
+  }
+  if (parsed.data.email !== credentials.email || parsed.data.password !== credentials.password) {
     return formSubmission
       ? formRedirect("/login?error=credentials")
       : NextResponse.json({ error: "Invalid credentials" }, { status: 401 });

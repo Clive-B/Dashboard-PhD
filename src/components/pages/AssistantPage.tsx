@@ -180,6 +180,7 @@ export function AssistantPage() {
       ] : [],
       work: includeWorkContext ? state.tasks.filter((task) => task.domain === "work" && task.status !== "completed").slice(0, 8).map((task) => `Work task: ${task.title}; status ${task.status}; priority ${task.priority}; due ${task.deadline}${task.notes ? `; notes ${task.notes}` : ""}`) : []
     };
+    if (process.env.NEXT_PUBLIC_CONNECTED_AI_ENABLED !== "true") return localAnswer(question);
     try {
       const response = await fetch("/api/assistant", {
         method: "POST",
