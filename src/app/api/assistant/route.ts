@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { aiGatewayToken, generalAiEnabled } from "@/lib/server/aiGateway";
 import { databaseConfigured, db, userIdForEmail } from "@/lib/server/db";
 import { currentEmail } from "@/lib/server/session";
 
@@ -22,11 +23,10 @@ function extractOutputText(payload: OpenAIResponse) {
   return payload.output?.flatMap((item) => item.content || []).filter((item) => item.type === "output_text").map((item) => item.text || "").join("\n").trim() || "";
 }
 
-async function generateAnswer(input: z.infer<typeof schema>) {
+async function generateAnswer(input: z.infer<typeof schema>, apiKey: string | null) {
   // Connected generation is deliberately limited to general questions. Academic,
   // planning, Knowledge Vault and work context never enter the provider request.
-  if (input.scope !== "general" || process.env.GENERAL_AI_ENABLED === "false") return null;
-  const apiKey = process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim();
+  if (input.scope !== "general" || !generalAiEnabled()) return null;
   if (!apiKey) return null;
 
   const response = await fetch("https://ai-gateway.vercel.sh/v1/responses", {
@@ -62,14 +62,15 @@ export async function POST(request: Request) {
     }
   }
 
+  const providerToken = input.scope === "general" ? await aiGatewayToken() : null;
   let answer: string | null = null;
-  try { answer = await generateAnswer(input); }
+  try { answer = await generateAnswer(input, providerToken); }
   catch (error) {
     console.error("Assistant provider request failed:", error instanceof Error ? error.message : "Unknown provider error");
     answer = null;
   }
 
-  const providerConfigured = process.env.GENERAL_AI_ENABLED !== "false" && Boolean(process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim());
+  const providerConfigured = Boolean(providerToken);
   const provenance = evidence.length ? "source-grounded" : "general";
   if (!answer && evidence.length) answer = evidence.map((item) => item.excerpt).join("\n\n");
   if (!answer) return NextResponse.json({
