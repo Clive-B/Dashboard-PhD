@@ -7,6 +7,7 @@ A personal, human-led command center for balancing PhD learning, revision, profe
 - Dedicated Course Manager for building the course hierarchy from modules and lectures through topics and concepts; new concepts automatically enter Mastery.
 - Protected Otter Pro/Zapier transcript inbox with duplicate prevention, explicit course matching, immediate early access and a three-calendar-day guided lesson schedule.
 - Secure local sign-in with an HTTP-only signed session cookie.
+- Database-backed bcrypt login when PostgreSQL is configured, with a secure single-owner environment fallback for the hosted pilot.
 - Command Center with a transparent “What should I do now?” priority score.
 - Knowledge Vault for pasted notes and provider-neutral transcripts, metadata, search, preview and deletion.
 - Quick Recall, Test Me and Teach AIC revision modes with the 0–5 self-score.
@@ -22,6 +23,7 @@ A personal, human-led command center for balancing PhD learning, revision, profe
 - Configurable capacity utilization and removable demo data.
 - PostgreSQL/pgvector schema, seed data, APIs, source chunks, evidence references and audit foundations.
 - Replaceable object-storage interface with a safe local adapter.
+- Default-deny Jarvis capability, approval and audit foundations; external tool execution remains disabled.
 
 Browser-local mode is enabled when `DATABASE_URL` is not configured. It keeps changes in this browser using `localStorage`, allowing the First Edition to run immediately. PostgreSQL APIs become active when the database is configured.
 
@@ -62,6 +64,7 @@ The migration creates the full course → module → lecture → topic → conce
 - `S3_*` variables are reserved for an S3-compatible storage adapter. First Edition uses local storage through the same interface.
 - Google and Microsoft calendar integrations are not required for First Edition; the internal calendar is active.
 - Otter Pro connects through Zapier after PostgreSQL and the public HTTPS deployment are configured. See `docs/otter-zapier-setup.md`.
+- Jarvis permissions and human approvals are defined in `docs/jarvis-permission-model.md`; this milestone records decisions but intentionally does not execute tools.
 
 ## AIC connection and Google Sites
 

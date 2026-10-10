@@ -11,8 +11,16 @@ function secret() {
   throw new Error("AUTH_SECRET must contain at least 32 characters in production.");
 }
 
-export async function createSessionToken(email: string) {
-  return new SignJWT({ email, role: "scholar" }).setProtectedHeader({ alg: "HS256" }).setSubject(email).setIssuedAt().setExpirationTime("12h").sign(secret());
+export type SessionIdentity = { email: string; userId?: string; role: string };
+
+export async function createSessionToken(identity: SessionIdentity) {
+  return new SignJWT({ email: identity.email, userId: identity.userId, role: identity.role })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(identity.userId || identity.email)
+    .setJti(crypto.randomUUID())
+    .setIssuedAt()
+    .setExpirationTime("12h")
+    .sign(secret());
 }
 
 export async function verifySessionToken(token: string) {

@@ -8,7 +8,7 @@ async function aiStatus() {
 
 export async function GET() {
   const ai = await aiStatus();
-  if (!databaseConfigured()) return NextResponse.json({ status: "ok", database: "local-demo", ai });
-  try { await db().query("SELECT 1"); return NextResponse.json({ status: "ok", database: "connected", ai }); }
+  if (!databaseConfigured()) return NextResponse.json({ status: "ok", database: "local-demo", auth: "environment-single-user", ai });
+  try { await db().query("SELECT 1"); return NextResponse.json({ status: "ok", database: "connected", auth: "database", ai }); }
   catch { return NextResponse.json({ status: "degraded", database: "unavailable" }, { status: 503 }); }
 }

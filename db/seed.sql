@@ -3,8 +3,8 @@ DECLARE
   v_user uuid; v_course uuid; v_module uuid; v_lecture uuid; v_topic uuid;
   v_ontology uuid; v_epistemology uuid; v_axiology uuid; v_source uuid; v_project uuid;
 BEGIN
-  INSERT INTO users(email,password_hash) VALUES ('clive@example.com', crypt('AicScholar!2026', gen_salt('bf')))
-  ON CONFLICT(email) DO UPDATE SET updated_at=now() RETURNING id INTO v_user;
+  INSERT INTO users(email,password_hash,role) VALUES ('clive@example.com', crypt('AicScholar!2026', gen_salt('bf')),'owner')
+  ON CONFLICT(email) DO UPDATE SET role=EXCLUDED.role,updated_at=now() RETURNING id INTO v_user;
   IF v_user IS NULL THEN SELECT id INTO v_user FROM users WHERE email='clive@example.com'; END IF;
   INSERT INTO profiles(user_id,full_name,preferred_name,academic_level,field,mentor)
   VALUES(v_user,'Clive Ebo Barton-Odro','Clive','PhD','Information Technology','Dr. David King Boison')
